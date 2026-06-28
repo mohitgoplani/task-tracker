@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
-  // Skip auth check on public + auth routes
   const { pathname } = req.nextUrl;
-  const publicRoutes = ["/auth", "/api/cron", "/api/auth", "/_next", "/favicon"];
+  const publicRoutes = ["/auth", "/api/auth", "/api/feed", "/_next", "/favicon"];
   if (publicRoutes.some((p) => pathname.startsWith(p))) return res;
 
   const supabase = createServerClient(
@@ -14,11 +13,13 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) { return req.cookies.get(name)?.value; },
-        set(name, value, options) {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
           res.cookies.set({ name, value, ...options });
         },
-        remove(name, options) {
+        remove(name: string, options: CookieOptions) {
           res.cookies.set({ name, value: "", ...options });
         },
       },
