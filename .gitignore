@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.env
+.env.local
+.env*.local
+.DS_Store
+*.log
+.vercel
+next-env.d.ts
+.supabase/
+
+# nano backup files
+*.save
+*.save.*
+
+# terminal logs
+Terminal Saved Output.txt
