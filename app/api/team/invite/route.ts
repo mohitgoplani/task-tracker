@@ -4,9 +4,9 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 
 const InviteSchema = z.object({ emails: z.array(z.string().email()).min(1).max(50) });
 
-// Create pending invitation rows. The invited user must sign in with Google using
-// the same email — the auth callback automatically accepts the matching invitation.
-// The admin should share the app URL with them manually.
+// Create pending invitation rows. Returns a shareable invite link per email.
+// Admins paste the link into Teams / iMessage / email — the invitee clicks it,
+// signs in with any Google account, and joins the org automatically.
 export async function POST(req: NextRequest) {
   const supabase = getSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -22,11 +22,18 @@ export async function POST(req: NextRequest) {
 
   const body = InviteSchema.parse(await req.json());
   const inserts = body.emails.map((email) => ({ org_id: me.org_id, email, invited_by: user.id }));
+
   const { data, error } = await supabase
     .from("invitations")
     .upsert(inserts, { onConflict: "org_id,email" })
-    .select("email");
+    .select("email, token");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ invited: (data || []).length, shareUrl: process.env.NEXT_PUBLIC_APP_URL });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const invites = (data || []).map((row) => ({
+    email: row.email,
+    inviteUrl: `${appUrl}/invite/${row.token}`,
+  }));
+
+  return NextResponse.json({ invited: invites.length, invites });
 }

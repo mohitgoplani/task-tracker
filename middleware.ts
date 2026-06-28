@@ -5,7 +5,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
   const { pathname } = req.nextUrl;
-  const publicRoutes = ["/auth", "/api/auth", "/api/feed", "/_next", "/favicon"];
+  const publicRoutes = ["/auth", "/api/auth", "/api/feed", "/invite", "/_next", "/favicon"];
   if (publicRoutes.some((p) => pathname.startsWith(p))) return res;
 
   const supabase = createServerClient(
